@@ -18,7 +18,7 @@ The repo is simultaneously a **plugin** and its own **marketplace catalog**:
   change.
 - `.claude-plugin/marketplace.json` — the catalog. Its `plugins` array contains a single
   entry whose `source` is `"."` — i.e. the plugin *is* this repo root. This is what lets
-  another project run `/plugin marketplace add cairn-ai/agent-collab-tooling` and then
+  another project run `/plugin marketplace add cairn-ai-tooling/agent-collab-tooling` and then
   `/plugin install agent-collab-tooling@cairn-ai-agent-tooling`.
 - `skills/<name>/SKILL.md` — one directory per skill, auto-discovered at install time.
 

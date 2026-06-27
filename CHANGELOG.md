@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Upgrade `markdownlint-cli2` to `^0.22.1` (bundles markdownlint 0.40.0); complied with the
   new `MD060` table-column-style rule.
+- Point repository/homepage URLs and the marketplace-add command at the
+  `cairn-ai-tooling` GitHub organization.
 
 ### Security
 

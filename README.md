@@ -41,7 +41,7 @@ it and install in two steps:
 
 ```bash
 # Add this repository as a plugin marketplace
-/plugin marketplace add cairn-ai/agent-collab-tooling
+/plugin marketplace add cairn-ai-tooling/agent-collab-tooling
 
 # Install the plugin (and its skills)
 /plugin install agent-collab-tooling@cairn-ai-agent-tooling
