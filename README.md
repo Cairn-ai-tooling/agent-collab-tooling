@@ -27,7 +27,7 @@ guidance the agent follows. Claude Code auto-discovers them when the plugin is i
 ## Skills in this plugin
 
 | Skill | Use it when… |
-|-------|--------------|
+| ----- | ------------ |
 | [`agent-handoff`](skills/agent-handoff/SKILL.md) | Finishing work that another agent or a future session will continue — produces a structured handoff (goal, decisions, state, remaining work, blockers). |
 | [`shared-task-tracking`](skills/shared-task-tracking/SKILL.md) | Multiple agents work toward a shared goal — defines a single `TASKS.md` source of truth and a claim/update/complete protocol that prevents double-work. |
 | [`code-review-exchange`](skills/code-review-exchange/SKILL.md) | One agent asks another to review code — standardizes the review request and the severity-tagged review response. |
