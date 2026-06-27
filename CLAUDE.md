@@ -18,8 +18,8 @@ The repo is simultaneously a **plugin** and its own **marketplace catalog**:
   change.
 - `.claude-plugin/marketplace.json` — the catalog. Its `plugins` array contains a single
   entry whose `source` is `"."` — i.e. the plugin *is* this repo root. This is what lets
-  another project run `/plugin marketplace add origamifox/agent-collab-tooling` and then
-  `/plugin install agent-collab-tooling@origamifox-agent-tooling`.
+  another project run `/plugin marketplace add cairn-ai/agent-collab-tooling` and then
+  `/plugin install agent-collab-tooling@cairn-ai-agent-tooling`.
 - `skills/<name>/SKILL.md` — one directory per skill, auto-discovered at install time.
 
 The two manifests are coupled: the plugin `name`, `version`, and the marketplace plugin
@@ -54,7 +54,7 @@ To smoke-test discovery locally from a clone:
 
 ```bash
 /plugin marketplace add /path/to/this/repo
-/plugin install agent-collab-tooling@origamifox-agent-tooling
+/plugin install agent-collab-tooling@cairn-ai-agent-tooling
 ```
 
 ## Notes

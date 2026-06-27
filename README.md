@@ -39,17 +39,17 @@ it and install in two steps:
 
 ```bash
 # Add this repository as a plugin marketplace
-/plugin marketplace add origamifox/agent-collab-tooling
+/plugin marketplace add cairn-ai/agent-collab-tooling
 
 # Install the plugin (and its skills)
-/plugin install agent-collab-tooling@origamifox-agent-tooling
+/plugin install agent-collab-tooling@cairn-ai-agent-tooling
 ```
 
 To try it locally from a clone:
 
 ```bash
 /plugin marketplace add /path/to/this/repo
-/plugin install agent-collab-tooling@origamifox-agent-tooling
+/plugin install agent-collab-tooling@cairn-ai-agent-tooling
 ```
 
 Once installed, the skills are available to the agent automatically (and via `/agent-handoff`,
@@ -84,4 +84,4 @@ Once installed, the skills are available to the agent automatically (and via `/a
 
 ## License
 
-[MIT](LICENSE) © Steven Merriel / OrigamiFox
+[MIT](LICENSE) © Steven Merriel / Cairn AI

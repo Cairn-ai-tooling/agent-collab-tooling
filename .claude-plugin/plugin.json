@@ -6,8 +6,8 @@
     "name": "Steven Merriel",
     "email": "steven.merriel@origamifox.com.au"
   },
-  "homepage": "https://github.com/origamifox/agent-collab-tooling",
-  "repository": "https://github.com/origamifox/agent-collab-tooling",
+  "homepage": "https://github.com/cairn-ai/agent-collab-tooling",
+  "repository": "https://github.com/cairn-ai/agent-collab-tooling",
   "license": "MIT",
   "keywords": [
     "agents",

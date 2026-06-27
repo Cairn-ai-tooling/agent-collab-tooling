@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "origamifox-agent-tooling",
+  "name": "cairn-ai-agent-tooling",
   "owner": {
     "name": "Steven Merriel",
     "email": "steven.merriel@origamifox.com.au"
   },
-  "description": "Centralized agent-collaboration tooling for AI agents across OrigamiFox projects.",
+  "description": "Centralized agent-collaboration tooling for AI agents across Cairn AI projects.",
   "plugins": [
     {
       "name": "agent-collab-tooling",
