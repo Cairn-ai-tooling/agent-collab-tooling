@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pre-commit gate: lint markdown and run manifest tests before allowing a commit.
+# Enabled via `npm install` (the "prepare" script sets core.hooksPath to .githooks),
+# or manually with: git config core.hooksPath .githooks
+set -e
+
+if [ ! -d node_modules ]; then
+  echo "pre-commit: node_modules missing — run 'npm install' to enable linting." >&2
+  exit 1
+fi
+
+echo "pre-commit: linting markdown..."
+npm run --silent lint
+
+echo "pre-commit: running tests..."
+npm test --silent
+
+echo "pre-commit: OK"

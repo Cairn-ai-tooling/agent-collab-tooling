@@ -1,0 +1,17 @@
+{
+  // Markdown lint rules for this repo. Rationale lives in docs/decisions/0001-*.md.
+  "config": {
+    "default": true,
+    // Prose is wrapped ~100 cols, but tables, code blocks and links legitimately exceed it.
+    "MD013": false,
+    // Keep a Changelog repeats "### Added" etc. under each version; only forbid duplicate
+    // headings that share the same parent.
+    "MD024": { "siblings_only": true },
+    // SKILL.md files open with YAML frontmatter; don't require an H1 on line 1.
+    "MD041": false
+  },
+  "ignores": [
+    "node_modules",
+    "LICENSE"
+  ]
+}

@@ -33,6 +33,7 @@ Each task is a checklist line with an explicit status, owner, and stable id:
 ```
 
 Status legend (keep this legend at the top of `TASKS.md`):
+
 - `[ ]` **open** — available to claim, no owner.
 - `[~]` **in-progress** — actively owned; the owner tag is mandatory.
 - `[x]` **done** — completed and verified.

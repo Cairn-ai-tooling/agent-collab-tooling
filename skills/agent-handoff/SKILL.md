@@ -71,6 +71,7 @@ Ordered by what to do next. Each item actionable on its own:
 ## Receiving a handoff
 
 When you *pick up* a handoff:
+
 - Read it fully before acting.
 - Re-verify any claimed state you depend on (run the tests, check the branch) rather than
   trusting it blind — handoffs reflect what was true when written.

@@ -1,0 +1,18 @@
+{
+  "name": "agent-collab-tooling",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dev tooling for the agent-collab-tooling Claude Code plugin (linting + manifest tests).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "lint": "markdownlint-cli2 \"**/*.md\"",
+    "lint:fix": "markdownlint-cli2 --fix \"**/*.md\"",
+    "test": "node --test",
+    "check": "npm run lint && npm test",
+    "prepare": "git config core.hooksPath .githooks || true"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.18.1"
+  }
+}

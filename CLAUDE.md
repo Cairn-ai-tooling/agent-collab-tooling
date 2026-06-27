@@ -39,26 +39,50 @@ Every skill is a `skills/<kebab-case-name>/SKILL.md` with YAML frontmatter:
   skills deliberately reference each other and the superpowers set.
 
 When adding a skill: create the directory + `SKILL.md`, add a row to the README's "Skills
-in this plugin" table, and bump `version` in both manifests.
+in this plugin" table, add a `CHANGELOG.md` `[Unreleased]` entry, and (on release) bump
+`version` in both manifests.
+
+## Commands
+
+```bash
+npm install        # installs markdownlint-cli2 and enables the .githooks pre-commit hook
+npm run lint       # markdownlint over all Markdown (config in .markdownlint-cli2.jsonc)
+npm run lint:fix   # auto-fix fixable lint issues
+npm test           # node:test — runs test/manifests.test.mjs
+npm run check      # lint + test together (what CI and the pre-commit hook run)
+```
+
+Run a single test by name: `node --test --test-name-pattern "version-synced"`.
 
 ## Validating changes
 
-There is no test suite. Before committing, verify mechanically:
+`test/manifests.test.mjs` (node:test) enforces the invariants that are easy to break by
+hand:
 
-```bash
-python3 -m json.tool .claude-plugin/plugin.json
-python3 -m json.tool .claude-plugin/marketplace.json
-```
+- `plugin.json` and `marketplace.json` must stay **version-synced** (same version for the
+  plugin entry) — this is the most important check, since the two manifests are coupled.
+- every `skills/<name>/SKILL.md` must have frontmatter with `name` + `description`, and
+  `name` must match its directory.
 
-To smoke-test discovery locally from a clone:
+There is no type checking — there is no typed source; these tests are the equivalent
+guardrail. Both lint and tests run via the pre-commit hook and GitHub Actions
+(`.github/workflows/ci.yml`). To smoke-test plugin discovery locally from a clone:
 
 ```bash
 /plugin marketplace add /path/to/this/repo
 /plugin install agent-collab-tooling@cairn-ai-agent-tooling
 ```
 
+## Records & conventions
+
+- **ADRs** live in `docs/decisions/NNNN-*.md` (4-digit, gap-safe numbering). Record
+  non-trivial decisions with the `decision-record` skill; rationale for the tooling is in
+  `docs/decisions/0001-adopt-linting-tests-and-records.md`.
+- **CHANGELOG.md** follows Keep a Changelog 1.1.0 + SemVer. Add changes under
+  `[Unreleased]` with the `changelog` skill (never create a duplicate `### <Type>` heading).
+
 ## Notes
 
-- `.remember/` is local session tooling and is gitignored — never commit it.
+- `.remember/` and `node_modules/` are gitignored — never commit them.
 - This is a plugin *source* repo, not a project that gets deployed; ignore the Vercel/AWS
   session tooling unless explicitly asked.

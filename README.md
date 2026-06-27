@@ -31,6 +31,8 @@ guidance the agent follows. Claude Code auto-discovers them when the plugin is i
 | [`agent-handoff`](skills/agent-handoff/SKILL.md) | Finishing work that another agent or a future session will continue — produces a structured handoff (goal, decisions, state, remaining work, blockers). |
 | [`shared-task-tracking`](skills/shared-task-tracking/SKILL.md) | Multiple agents work toward a shared goal — defines a single `TASKS.md` source of truth and a claim/update/complete protocol that prevents double-work. |
 | [`code-review-exchange`](skills/code-review-exchange/SKILL.md) | One agent asks another to review code — standardizes the review request and the severity-tagged review response. |
+| [`decision-record`](skills/decision-record/SKILL.md) | Recording an architecture/design decision — scaffolds the next-numbered ADR in `docs/decisions/` from a template, with gap-safe numbering. |
+| [`changelog`](skills/changelog/SKILL.md) | Recording a notable change — adds a correctly-placed entry under `[Unreleased]` in `CHANGELOG.md`, reusing the right `### <Type>` section without duplicating headings. |
 
 ## Installing in another project
 
@@ -57,30 +59,60 @@ Once installed, the skills are available to the agent automatically (and via `/a
 
 ## Repository structure
 
-```
+```text
 .
 ├── .claude-plugin/
 │   ├── plugin.json          # Plugin manifest
 │   └── marketplace.json     # Marketplace catalog (lists this plugin, source ".")
-├── skills/
-│   ├── agent-handoff/SKILL.md
-│   ├── shared-task-tracking/SKILL.md
-│   └── code-review-exchange/SKILL.md
+├── skills/                  # One directory per skill (SKILL.md + supporting files)
+├── docs/decisions/          # Architecture Decision Records (ADRs)
+├── test/manifests.test.mjs  # node:test invariant checks for the manifests + skills
+├── .githooks/pre-commit     # Local lint + test gate
+├── .github/workflows/ci.yml # CI: lint + test
+├── CHANGELOG.md             # Keep a Changelog / SemVer
 ├── CLAUDE.md                # Guidance for agents working *in this repo*
+├── package.json             # Dev tooling (markdownlint, test scripts)
 ├── LICENSE
 └── README.md
 ```
 
+## Development
+
+This repo is mostly Markdown, so the tooling is lightweight. Run once to install the
+linter and enable the pre-commit hook:
+
+```bash
+npm install        # installs markdownlint-cli2; the "prepare" script enables .githooks
+```
+
+Then:
+
+```bash
+npm run lint       # markdownlint over all Markdown
+npm run lint:fix   # auto-fix what markdownlint can
+npm test           # node:test — validates manifests + skill frontmatter
+npm run check      # lint + test (what CI runs)
+```
+
+The tests enforce that `plugin.json` and `marketplace.json` stay version-synced and that
+every skill has valid frontmatter. There is no type checking — there is no typed source;
+the manifest tests serve the equivalent guardrail role. Rationale is recorded in
+[`docs/decisions/0001-adopt-linting-tests-and-records.md`](docs/decisions/0001-adopt-linting-tests-and-records.md).
+
 ## Adding a new skill
 
-1. Create `skills/<your-skill-name>/SKILL.md` (kebab-case directory name).
+1. Create `skills/<your-skill-name>/SKILL.md` (kebab-case directory name matching `name`).
 2. Add YAML frontmatter with at least `name` and `description`; a precise `description`
    (and optional `when_to_use`) is what lets agents auto-invoke the skill at the right time.
 3. Write concrete, actionable guidance — not a placeholder. State the rule, show the
    format, and give quality checks.
 4. Add a row to the **Skills in this plugin** table above.
-5. Bump the `version` in [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) and the
-   matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+5. Add a `CHANGELOG.md` entry under `[Unreleased]` (use the `changelog` skill).
+6. On release, bump the `version` in both
+   [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) and the matching entry in
+   [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) (kept in sync by
+   the tests).
+7. Run `npm run check` before committing.
 
 ## License
 

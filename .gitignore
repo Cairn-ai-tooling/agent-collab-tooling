@@ -6,6 +6,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Dependencies
+node_modules/
+
 # Local agent / tooling scratch
 .claude/settings.local.json
 .remember/
