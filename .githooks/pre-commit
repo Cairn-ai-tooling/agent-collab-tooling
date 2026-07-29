@@ -1,5 +1,6 @@
 #!/bin/sh
-# Pre-commit gate: lint markdown and run manifest tests before allowing a commit.
+# Pre-commit gate: lint markdown and run the tests (node manifests + Python
+# scripts) before allowing a commit.
 # Enabled via `npm install` (the "prepare" script sets core.hooksPath to .githooks),
 # or manually with: git config core.hooksPath .githooks
 set -e
@@ -9,10 +10,16 @@ if [ ! -d node_modules ]; then
   exit 1
 fi
 
+if ! command -v uv >/dev/null 2>&1; then
+  echo "pre-commit: 'uv' not found — needed for the Python script tests." >&2
+  echo "  Install it: https://docs.astral.sh/uv/getting-started/installation/" >&2
+  exit 1
+fi
+
 echo "pre-commit: linting markdown..."
 npm run --silent lint
 
-echo "pre-commit: running tests..."
+echo "pre-commit: running tests (node manifests + Python scripts)..."
 npm test --silent
 
 echo "pre-commit: OK"

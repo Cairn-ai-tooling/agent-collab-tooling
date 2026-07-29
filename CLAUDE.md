@@ -48,21 +48,32 @@ in this plugin" table, add a `CHANGELOG.md` `[Unreleased]` entry, and (on releas
 npm install        # installs markdownlint-cli2 and enables the .githooks pre-commit hook
 npm run lint       # markdownlint over all Markdown (config in .markdownlint-cli2.jsonc)
 npm run lint:fix   # auto-fix fixable lint issues
-npm test           # node:test — runs test/manifests.test.mjs
+npm run test:node  # node:test — runs test/manifests.test.mjs
+npm run test:py    # uv run pytest — tests skills' bundled Python scripts (needs uv)
+npm test           # both suites (node + Python)
 npm run check      # lint + test together (what CI and the pre-commit hook run)
 ```
 
-Run a single test by name: `node --test --test-name-pattern "version-synced"`.
+Run a single node test by name: `node --test --test-name-pattern "version-synced"`.
+Run a single Python test: `uv run pytest tests/product_item -k yaml_title`.
+`uv` is required for the Python tests (it manages an isolated `.venv`) and matches the
+`uv run` convention the skills use to invoke their scripts.
 
 ## Validating changes
 
-`test/manifests.test.mjs` (node:test) enforces the invariants that are easy to break by
-hand:
+`test/manifests.test.mjs` (node:test) enforces the manifest/skill invariants that are easy to
+break by hand:
 
 - `plugin.json` and `marketplace.json` must stay **version-synced** (same version for the
   plugin entry) — this is the most important check, since the two manifests are coupled.
 - every `skills/<name>/SKILL.md` must have frontmatter with `name` + `description`, and
   `name` must match its directory.
+
+`tests/` (pytest, run via `uv`) covers the Python scripts skills bundle — e.g. the
+`product-item` scaffolder/validator: YAML-safe titles, gap-safe numbering, the `--with-plan`
+cross-wiring, and drift parity between the scaffolder and the integrity gate. New Python helper
+scripts should ship with tests here; import them via the `sys.path` shim in `tests/conftest.py`
+(the scripts are skill *assets*, not an installed package).
 
 There is no type checking — there is no typed source; these tests are the equivalent
 guardrail. Both lint and tests run via the pre-commit hook and GitHub Actions

@@ -11,7 +11,7 @@
       "name": "agent-collab-tooling",
       "source": ".",
       "description": "Skills for agent-to-agent collaboration: handoff, shared task tracking, and code-review exchange.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "Steven Merriel"
       }

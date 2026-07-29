@@ -14,8 +14,10 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+      - name: Install uv (for the Python script tests)
+        uses: astral-sh/setup-uv@v5
       - run: npm install
       - name: Lint markdown
         run: npm run lint
-      - name: Run tests
+      - name: Run tests (node manifests + Python scripts)
         run: npm test

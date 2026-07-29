@@ -33,6 +33,7 @@ guidance the agent follows. Claude Code auto-discovers them when the plugin is i
 | [`code-review-exchange`](skills/code-review-exchange/SKILL.md) | One agent asks another to review code — standardizes the review request and the severity-tagged review response. |
 | [`decision-record`](skills/decision-record/SKILL.md) | Recording an architecture/design decision — scaffolds the next-numbered ADR in `docs/decisions/` from a template, with gap-safe numbering. |
 | [`changelog`](skills/changelog/SKILL.md) | Recording a notable change — adds a correctly-placed entry under `[Unreleased]` in `CHANGELOG.md`, reusing the right `### <Type>` section without duplicating headings. |
+| [`product-item`](skills/product-item/SKILL.md) | Creating a backlog artifact — scaffolds the next-numbered Epic, User Story, Task, or Implementation Plan from `docs/product/templates/`, wires parent/child links, and adds a roadmap pointer. Self-contained (`pyyaml` only) and bootstraps the workflow into any repo. |
 
 ## Installing in another project
 
@@ -66,7 +67,10 @@ Once installed, the skills are available to the agent automatically (and via `/a
 │   └── marketplace.json     # Marketplace catalog (lists this plugin, source ".")
 ├── skills/                  # One directory per skill (SKILL.md + supporting files)
 ├── docs/decisions/          # Architecture Decision Records (ADRs)
+├── docs/design/             # Design docs for larger, not-yet-built features
 ├── test/manifests.test.mjs  # node:test invariant checks for the manifests + skills
+├── tests/                   # pytest suite for skills' bundled Python scripts
+├── pyproject.toml           # uv/pytest config for the Python tests (not published)
 ├── .githooks/pre-commit     # Local lint + test gate
 ├── .github/workflows/ci.yml # CI: lint + test
 ├── CHANGELOG.md             # Keep a Changelog / SemVer
@@ -78,8 +82,14 @@ Once installed, the skills are available to the agent automatically (and via `/a
 
 ## Development
 
-This repo is mostly Markdown, so the tooling is lightweight. Run once to install the
-linter and enable the pre-commit hook:
+This repo is mostly Markdown plus a few Python helper scripts bundled inside skills, so the
+tooling stays lightweight. It needs two things on your PATH:
+
+- **Node.js** — for markdownlint and the manifest tests.
+- **[uv](https://docs.astral.sh/uv/)** — runs the Python script tests in an isolated env
+  (matches the `uv run python …` convention the skills use).
+
+Run once to install the linter and enable the pre-commit hook:
 
 ```bash
 npm install        # installs markdownlint-cli2; the "prepare" script enables .githooks
@@ -90,14 +100,18 @@ Then:
 ```bash
 npm run lint       # markdownlint over all Markdown
 npm run lint:fix   # auto-fix what markdownlint can
-npm test           # node:test — validates manifests + skill frontmatter
-npm run check      # lint + test (what CI runs)
+npm run test:node  # node:test — validates manifests + skill frontmatter
+npm run test:py    # uv run pytest — tests the skills' bundled Python scripts
+npm test           # both test suites (node + Python)
+npm run check      # lint + test (what CI and the pre-commit hook run)
 ```
 
-The tests enforce that `plugin.json` and `marketplace.json` stay version-synced and that
-every skill has valid frontmatter. There is no type checking — there is no typed source;
-the manifest tests serve the equivalent guardrail role. Rationale is recorded in
-[`docs/decisions/0001-adopt-linting-tests-and-records.md`](docs/decisions/0001-adopt-linting-tests-and-records.md).
+The node tests enforce that `plugin.json` and `marketplace.json` stay version-synced and that
+every skill has valid frontmatter; the Python tests (under [`tests/`](tests/), run via `uv` +
+`pytest`) cover the scaffolder/validator scripts. There is no type checking — there is no typed
+source; these tests serve the equivalent guardrail role. Rationale is recorded in
+[`docs/decisions/0001-adopt-linting-tests-and-records.md`](docs/decisions/0001-adopt-linting-tests-and-records.md)
+and [`0004-adopt-python-tests-uv-pytest.md`](docs/decisions/0004-adopt-python-tests-uv-pytest.md).
 
 ## Adding a new skill
 
