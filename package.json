@@ -1,6 +1,6 @@
 {
   "name": "agent-collab-tooling",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Dev tooling for the agent-collab-tooling Claude Code plugin (linting + manifest tests).",
   "license": "MIT",

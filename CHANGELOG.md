@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-29
+
 ### Added
 
 - Python test harness (`uv` + `pytest`, config in `pyproject.toml`, tests under `tests/`) for
@@ -61,5 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repo's trusted input rather than forced via `npm audit fix --force` (which downgrades the
   linter); see `docs/decisions/0002-*.md`.
 
-[Unreleased]: https://github.com/cairn-ai-tooling/agent-collab-tooling/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cairn-ai-tooling/agent-collab-tooling/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/cairn-ai-tooling/agent-collab-tooling/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/cairn-ai-tooling/agent-collab-tooling/releases/tag/v0.1.0
