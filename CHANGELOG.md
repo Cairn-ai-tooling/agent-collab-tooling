@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `product-item` skill — scaffolds the next-numbered backlog artifact (Epic, User Story, Task,
+  Implementation Plan) from `docs/product/templates/`, wiring parent/child links and a roadmap
+  pointer. Bundles a self-contained scaffolder and integrity-gate script (`pyyaml` only, no
+  application-package import) plus a bootstrap that seeds the workflow into any repo.
+- `product-item` scaffolder flags `--status`, `--standalone`, and `--with-plan`, and YAML-safe
+  title quoting so a title containing a `#` (e.g. "PR #30") or `:` round-trips instead of being
+  truncated as a comment.
+
+### Changed
+
+- `markdownlint-cli2` now ignores the `product-item` scaffold templates and roadmap seed, which
+  are placeholder-based data (filled by exact-string substitution) rather than prose.
+
 ## [0.1.0] - 2026-06-27
 
 ### Added

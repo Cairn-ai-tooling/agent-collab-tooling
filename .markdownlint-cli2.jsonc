@@ -12,6 +12,13 @@
   },
   "ignores": [
     "node_modules",
-    "LICENSE"
+    "LICENSE",
+    // Scaffold templates are intentionally full of `<placeholder>` tokens and
+    // example fenced blocks; the product-item Python scaffolder fills them by
+    // exact-string replacement, so they can't be rewritten to satisfy MD033
+    // (inline HTML) / MD025 (single H1) without breaking substitution. They are
+    // data, not prose — lint the filled artifacts instead.
+    "skills/product-item/assets/templates/*.md",
+    "skills/product-item/assets/roadmap-template.md"
   ]
 }

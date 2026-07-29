@@ -33,6 +33,7 @@ guidance the agent follows. Claude Code auto-discovers them when the plugin is i
 | [`code-review-exchange`](skills/code-review-exchange/SKILL.md) | One agent asks another to review code — standardizes the review request and the severity-tagged review response. |
 | [`decision-record`](skills/decision-record/SKILL.md) | Recording an architecture/design decision — scaffolds the next-numbered ADR in `docs/decisions/` from a template, with gap-safe numbering. |
 | [`changelog`](skills/changelog/SKILL.md) | Recording a notable change — adds a correctly-placed entry under `[Unreleased]` in `CHANGELOG.md`, reusing the right `### <Type>` section without duplicating headings. |
+| [`product-item`](skills/product-item/SKILL.md) | Creating a backlog artifact — scaffolds the next-numbered Epic, User Story, Task, or Implementation Plan from `docs/product/templates/`, wires parent/child links, and adds a roadmap pointer. Self-contained (`pyyaml` only) and bootstraps the workflow into any repo. |
 
 ## Installing in another project
 
