@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Python test harness (`uv` + `pytest`, config in `pyproject.toml`, tests under `tests/`) for
+  the Python scripts skills bundle, starting with the `product-item` scaffolder and validator
+  (YAML-safe titles, gap-safe numbering, `--with-plan` cross-wiring, scaffolder↔validator drift
+  guards). Exposed as `npm run test:py`; `npm test` now runs the node and Python suites. Recorded
+  in `docs/decisions/0004-adopt-python-tests-uv-pytest.md`.
 - `product-item` skill — scaffolds the next-numbered backlog artifact (Epic, User Story, Task,
   Implementation Plan) from `docs/product/templates/`, wiring parent/child links and a roadmap
   pointer. Bundles a self-contained scaffolder and integrity-gate script (`pyyaml` only, no
@@ -21,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `markdownlint-cli2` now ignores the `product-item` scaffold templates and roadmap seed, which
   are placeholder-based data (filled by exact-string substitution) rather than prose.
+- CI and the pre-commit hook now require `uv` and run the Python tests alongside lint and the
+  node manifest tests.
 
 ## [0.1.0] - 2026-06-27
 

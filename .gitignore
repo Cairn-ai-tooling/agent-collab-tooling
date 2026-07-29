@@ -9,6 +9,11 @@ Thumbs.db
 # Dependencies
 node_modules/
 
+# Python (uv-managed dev/test env; uv.lock is committed for reproducible runs)
+.venv/
+__pycache__/
+.pytest_cache/
+
 # Local agent / tooling scratch
 .claude/settings.local.json
 .remember/

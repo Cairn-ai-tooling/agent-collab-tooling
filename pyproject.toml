@@ -1,0 +1,25 @@
+# Dev/test harness for the Python scripts bundled inside this repo's skills.
+#
+# This repo ships no installable Python package — the scripts under
+# skills/*/assets/scripts/ are *assets* copied into consuming repos. This file
+# exists only to give `uv` a project to resolve dev dependencies against and to
+# configure pytest. It is never published.
+[project]
+name = "agent-collab-tooling-dev"
+version = "0.0.0"
+description = "Dev/test harness for the plugin's bundled Python scripts (not published)."
+requires-python = ">=3.10"
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pyyaml>=6",
+]
+
+[tool.uv]
+# Not a package — don't try to build/install this project, just its dev deps.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
