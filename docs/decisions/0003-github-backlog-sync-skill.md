@@ -15,11 +15,11 @@ GitHub MCP server). A survey of the current environment found **no existing skil
 Issues/Projects (`pr-review-toolkit` / `code-review` are PR-review only), so this is net-new; the
 realistic building blocks are the `gh` CLI (commonly installed and pre-authenticated) and the
 GitHub MCP server. The full design is in
-[`docs/design/product-item-github-sync.md`](../design/product-item-github-sync.md).
+[`docs/design/github-backlog-sync.md`](../design/github-backlog-sync.md).
 
 ## Decision
 
-- Build GitHub sync as a **separate sibling skill** (working name `github-item-sync`), not as a
+- Build GitHub sync as a **separate sibling skill** named `github-backlog-sync`, not as a
   feature of `product-item`.
 - Keep the **local Markdown artifact as the source of truth**; the GitHub Issue is a mirror with
   a backlink, and sync is made **idempotent** by recording `github_issue` / `github_project_item`
@@ -53,7 +53,7 @@ GitHub MCP server. The full design is in
 
 ## Consequences
 
-- A future change adds `skills/github-item-sync/` (SKILL.md + a `sync_github_items.py` script +
+- A future change adds `skills/github-backlog-sync/` (SKILL.md + a `sync_github_items.py` script +
   an Issue-body template), a README table row, a CHANGELOG entry, and a version bump — following
   the same "adding a skill" checklist used here.
 - `product-item` artifacts gain two **optional** frontmatter fields (`github_issue`,

@@ -1,9 +1,9 @@
-# Design — GitHub Issues / Projects sync for `product-item`
+# Design — `github-backlog-sync` (GitHub Issues / Projects sync for `product-item`)
 
 **Status:** Proposed (design only — no implementation this round)
 **Related:** [`product-item`](../../skills/product-item/SKILL.md),
 [`shared-task-tracking`](../../skills/shared-task-tracking/SKILL.md), ADR
-[`0003`](../decisions/0003-github-item-sync-skill.md)
+[`0003`](../decisions/0003-github-backlog-sync-skill.md)
 
 ## Context
 
@@ -50,9 +50,9 @@ interface rather than hard-coding a single tool.
 
 ## Decision summary
 
-Build a **separate sibling skill** — working name `github-item-sync` — that reads
-`docs/product/**` and mirrors artifacts to GitHub. `product-item` is unchanged. See ADR
-[`0003`](../decisions/0003-github-item-sync-skill.md) for the rationale and the shape/backend
+Build a **separate sibling skill** — `github-backlog-sync` — that reads `docs/product/**` and
+mirrors artifacts to GitHub. `product-item` is unchanged. See ADR
+[`0003`](../decisions/0003-github-backlog-sync-skill.md) for the rationale and the shape/backend
 trade-offs considered.
 
 ## Architecture
@@ -138,13 +138,13 @@ cross-cutting status view is wanted; below that, plain Issues (or staying local)
 These counts are cheap to compute — the validator already walks `docs/product/**` — so the
 advisory can be emitted automatically. Proposed surface: a **non-failing** advisory line from
 `validate_product_items.py` (or the `product-item` closing report), e.g.
-`note: 23 open items across 3 epics — consider /github-item-sync to mirror to GitHub Issues.`
+`note: 23 open items across 3 epics — consider /github-backlog-sync to mirror to GitHub Issues.`
 It stays advisory (never an error) so it never blocks the offline workflow.
 
 ## Proposed skill shape
 
 ```text
-skills/github-item-sync/
+skills/github-backlog-sync/
   SKILL.md
   assets/
     scripts/
@@ -160,7 +160,8 @@ with-confirm ethos, since this reaches an external system.
 
 ## Open questions
 
-- Naming: `github-item-sync` vs `github-sync` vs folding under a `github/` skill namespace.
+- Whether to fold this under a `github/` skill namespace if more GitHub skills appear later
+  (the name `github-backlog-sync` is settled — see ADR 0003).
 - Labels/Project field names: assume-and-create, or require the consumer to pre-create them?
 - Where exactly the advisory lives (validator vs skill report) and whether it is opt-out.
 - Whether/when to add read-back (GitHub → Markdown) for status changes made on the board.
