@@ -67,11 +67,14 @@ Gather from the invocation; ask only for what's missing:
 ## Procedure
 
 1. **Resolve the backend and repo.** Prefer `gh`; confirm auth and the target `owner/name`.
-2. **Dry-run first — always.** Run the script in its default (plan-only) mode to produce the
-   sync plan and the backlog counts:
+2. **Dry-run first — always.** Run the bundled script in its default (plan-only) mode to produce
+   the sync plan and the backlog counts. The script ships with this skill — run it **in place**
+   from `assets/scripts/sync_github_items.py` (substitute this skill's real install path for
+   `<skill>`); it takes the backlog dir as an argument and finds its template relative to itself,
+   so it needs no bootstrap into the repo:
 
    ```bash
-   uv run python scripts/sync_github_items.py --repo <owner/name> [--project <N>]
+   uv run python <skill>/assets/scripts/sync_github_items.py docs/product --repo <owner/name> [--project <N>]
    ```
 
    It prints, per artifact: `create` (no `github_issue:` yet) or `update` (has one), the target
@@ -83,7 +86,7 @@ Gather from the invocation; ask only for what's missing:
 4. **Apply.** On confirmation, re-run with `--apply`:
 
    ```bash
-   uv run python scripts/sync_github_items.py --repo <owner/name> [--project <N>] --apply
+   uv run python <skill>/assets/scripts/sync_github_items.py docs/product --repo <owner/name> [--project <N>] --apply
    ```
 
    For each artifact the script: creates or updates the Issue; sets its open/closed state from
