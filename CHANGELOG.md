@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `github-backlog-sync` skill — mirrors the local `docs/product/` backlog to GitHub Issues and,
+  optionally, a GitHub Project board. Idempotent (records `github_issue:` / `github_project_item:`
+  back into artifact frontmatter), plan-only by default with a confirm-first `--apply`, and it
+  reports backlog counts against a size metric so GitHub is recommended only when it's warranted.
+  The sync engine is backend-agnostic (a `gh`-CLI adapter, with an agent-driven GitHub MCP
+  fallback documented in the skill) and unit-tested against a fake backend. Implements the design
+  in `docs/design/github-backlog-sync.md` / ADR 0003.
+
 ## [0.2.0] - 2026-07-29
 
 ### Added
