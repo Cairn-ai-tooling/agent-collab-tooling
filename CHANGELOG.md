@@ -14,8 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   back into artifact frontmatter), plan-only by default with a confirm-first `--apply`, and it
   reports backlog counts against a size metric so GitHub is recommended only when it's warranted.
   The sync engine is backend-agnostic (a `gh`-CLI adapter, with an agent-driven GitHub MCP
-  fallback documented in the skill) and unit-tested against a fake backend. Implements the design
-  in `docs/design/github-backlog-sync.md` / ADR 0003.
+  fallback documented in the skill) and unit-tested against a fake backend. It also flags unfilled
+  **stub** artifacts (offering to fill them via `product-item`) and **status drift** off the
+  canonical set, and on a re-sync skips artifacts whose content is unchanged since last sync
+  (tracked by a `github_synced_digest:`). Implements the design in
+  `docs/design/github-backlog-sync.md` / ADR 0003.
 
 ## [0.2.0] - 2026-07-29
 

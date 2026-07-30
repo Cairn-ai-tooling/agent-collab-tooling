@@ -12,19 +12,27 @@ tedious and easy to get wrong (duplicate issues, drifted status). This script ma
 - The local artifact stays the **source of truth**; each Issue is a mirror that links back.
 - The Issue number is recorded into the artifact frontmatter (``github_issue:``), so a re-run
   **updates** the existing Issue instead of creating a duplicate.
-- It is **plan-only by default**; mutating GitHub requires ``--apply``. The only local write is
-  recording ``github_issue:`` / ``github_project_item:`` back into frontmatter.
+- It is **plan-only by default**; mutating GitHub requires ``--apply``. The only local writes are
+  recording ``github_issue:`` / ``github_project_item:`` / ``github_synced_digest:`` back into
+  frontmatter.
 
-Design: the sync engine (load → plan → apply → write-back) is backend-agnostic — it talks to an
-``IssueBackend`` interface, so it is unit-testable against a fake backend with no network. The
-concrete backend here drives the ``gh`` CLI. (The GitHub MCP server is the *other* backend from
-the design, but MCP tools are invoked by the agent, not a subprocess — so when only MCP is
-available the agent runs the same steps itself, per ``SKILL.md``'s MCP fallback.)
+The dry-run also **surfaces things worth a human's attention before pushing**, because the eval
+runs showed these matter: artifacts that are still unfilled **stubs** (pushing them makes noise),
+**status values that have drifted** off the canonical set (the local status is free text), and —
+on a re-sync — which artifacts have actually **changed since they were last synced** (so an
+unchanged one can be skipped). None of these block the sync; they inform the confirm step.
+
+Design: the sync engine (load → plan → apply → write-back) talks to an ``IssueBackend`` interface,
+so it is unit-testable against a fake backend with no network. The concrete backend drives the
+``gh`` CLI. (The GitHub MCP server is the *other* backend from the design, but MCP tools are
+invoked by the agent, not a subprocess — so when only MCP is available the agent runs the same
+steps itself, per ``SKILL.md``'s MCP fallback.)
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -52,9 +60,14 @@ TYPES: dict[str, tuple[str, str]] = {
 # Statuses that mean the work is finished — the Issue is closed for these, open otherwise.
 CLOSED_STATUSES = {"Done", "Archived"}
 
-# The lifecycle values a Project single-select "Status" field mirrors (same names as the
-# artifact status), kept in lock-step with product-item's VALID_STATUSES.
+# The canonical lifecycle values (same names as the artifact status and a Project single-select
+# "Status" field), kept in lock-step with product-item's VALID_STATUSES. A status outside this
+# set is "drift" worth flagging, since the local status is free text.
 PROJECT_STATUSES = ("Proposed", "Ready", "In Progress", "In Review", "Done", "Archived")
+
+# An unfilled scaffold placeholder like ``<What this task does>`` left in an artifact body — the
+# signal that the artifact is still a stub and would make a low-signal Issue.
+PLACEHOLDER_RE = re.compile(r"<[^<>\n]{2,}>")
 
 
 # --------------------------------------------------------------------------------------------
@@ -133,8 +146,23 @@ class Artifact:
         return int(raw) if isinstance(raw, int) or (isinstance(raw, str) and raw.isdigit()) else None
 
     @property
+    def synced_digest(self) -> str | None:
+        raw = self.meta.get("github_synced_digest")
+        return raw if isinstance(raw, str) and raw else None
+
+    @property
     def is_open(self) -> bool:
         return self.status not in CLOSED_STATUSES
+
+    @property
+    def is_stub(self) -> bool:
+        """The artifact still carries unfilled ``<...>`` template placeholders, so pushing it
+        would make a low-signal Issue. Advisory heuristic, not a hard block."""
+        return bool(PLACEHOLDER_RE.search(self.body))
+
+    @property
+    def status_is_canonical(self) -> bool:
+        return self.status in PROJECT_STATUSES
 
 
 def load_artifacts(product_dir: Path) -> list[Artifact]:
@@ -151,17 +179,44 @@ def load_artifacts(product_dir: Path) -> list[Artifact]:
     return artifacts
 
 
-def open_epic_count(artifacts: list[Artifact]) -> int:
-    return sum(1 for a in artifacts if a.type_key == "epic" and a.is_open)
-
-
 def backlog_counts(artifacts: list[Artifact]) -> dict[str, int]:
-    """Counts that drive the size metric / recommendation."""
+    """Counts that drive the size metric / recommendation and the pre-sync warnings."""
     return {
         "total": len(artifacts),
         "open": sum(1 for a in artifacts if a.is_open),
-        "open_epics": open_epic_count(artifacts),
+        "open_epics": sum(1 for a in artifacts if a.type_key == "epic" and a.is_open),
+        "stubs": sum(1 for a in artifacts if a.is_stub),
+        "status_drift": sum(1 for a in artifacts if not a.status_is_canonical),
     }
+
+
+# --------------------------------------------------------------------------------------------
+# "Changed since last sync" — a content digest, not a raw git diff
+# --------------------------------------------------------------------------------------------
+#
+# We record a digest of the *issue-shaping content* (title + status + body) at sync time rather
+# than diffing the file in git. The sync itself writes bookkeeping frontmatter back into the
+# artifact (``github_issue:`` etc.), so a whole-file git diff would always report "changed" from
+# our own writes. Digesting title/status/body ignores that bookkeeping, so "unchanged → skip" is
+# reliable — and it works outside a git repo too.
+
+def content_digest(artifact: Artifact) -> str:
+    """A stable hash of the content that actually shapes the Issue (title, status, body)."""
+    payload = f"{artifact.title}\n{artifact.status}\n{artifact.body.strip()}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def changed_since_sync(artifact: Artifact) -> bool | None:
+    """Whether the artifact's issue-shaping content changed since it was last synced.
+
+    ``True``/``False`` by comparing the current content digest to the recorded
+    ``github_synced_digest``; ``None`` when there's no recorded digest yet (never applied) so the
+    caller treats it as "assume changed" and doesn't skip on uncertainty.
+    """
+    recorded = artifact.synced_digest
+    if not recorded:
+        return None
+    return content_digest(artifact) != recorded
 
 
 # --------------------------------------------------------------------------------------------
@@ -206,27 +261,46 @@ class PlanItem:
     label: str
     is_open: bool
     project_status: str
+    is_stub: bool
+    status_ok: bool
+    changed: bool | None  # for updates: did the artifact change since last sync? None = unknown
+
+    @property
+    def skip_unchanged(self) -> bool:
+        """An update whose artifact provably hasn't changed since last sync — safe to skip."""
+        return self.action == "update" and self.changed is False
 
     def describe(self) -> str:
         state = "open" if self.is_open else "closed"
         existing = f"#{self.artifact.github_issue}" if self.artifact.github_issue else "(new)"
-        return f"{self.action:6} {existing:6} [{self.label:5}] {state:6} {self.title}"
+        flags = ""
+        if self.action == "update":
+            flags += {True: " changed", False: " unchanged", None: ""}[self.changed]
+        if self.is_stub:
+            flags += " STUB"
+        if not self.status_ok:
+            flags += " STATUS-DRIFT"
+        return f"{self.action:6} {existing:6} [{self.label:5}] {state:6} {self.title}{flags}"
 
 
 def build_plan(artifacts: list[Artifact]) -> list[PlanItem]:
-    """Decide create-vs-update per artifact and compute its target Issue shape. Pure — no I/O —
-    so it is trivially testable and produces the same result the dry-run prints and ``--apply``
-    executes."""
+    """Decide create-vs-update per artifact and compute its target Issue shape plus the advisory
+    flags (stub / status drift / changed-since-sync). Read-only — the same result the dry-run
+    prints and ``--apply`` executes."""
     plan: list[PlanItem] = []
     for artifact in artifacts:
+        is_update = artifact.github_issue is not None
         plan.append(
             PlanItem(
                 artifact=artifact,
-                action="update" if artifact.github_issue else "create",
+                action="update" if is_update else "create",
                 title=issue_title(artifact),
                 label=TYPES[artifact.type_key][1],
                 is_open=artifact.is_open,
-                project_status=artifact.status if artifact.status in PROJECT_STATUSES else "Proposed",
+                project_status=artifact.status if artifact.status_is_canonical else "Proposed",
+                is_stub=artifact.is_stub,
+                status_ok=artifact.status_is_canonical,
+                changed=changed_since_sync(artifact) if is_update else None,
             )
         )
     return plan
@@ -274,12 +348,7 @@ class GhCliBackend(IssueBackend):
     _project_meta: dict[str, Any] | None = None
 
     def _gh(self, *args: str, stdin: str | None = None) -> str:
-        result = subprocess.run(
-            ["gh", *args],
-            input=stdin,
-            capture_output=True,
-            text=True,
-        )
+        result = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(f"gh {' '.join(args)} failed: {result.stderr.strip()}")
         return result.stdout.strip()
@@ -303,8 +372,7 @@ class GhCliBackend(IssueBackend):
         )
 
     def set_issue_state(self, number: int, *, is_open: bool) -> None:
-        verb = "reopen" if is_open else "close"
-        self._gh("issue", verb, str(number), "--repo", self.repo)
+        self._gh("issue", "reopen" if is_open else "close", str(number), "--repo", self.repo)
 
     # --- Projects v2 (owner defaults to the repo owner) ---
 
@@ -319,9 +387,7 @@ class GhCliBackend(IssueBackend):
             fields = json.loads(
                 self._gh("project", "field-list", str(self.project), "--owner", self._owner(), "--format", "json")
             )
-            status = next(
-                (f for f in fields.get("fields", []) if f.get("name") == "Status"), None
-            )
+            status = next((f for f in fields.get("fields", []) if f.get("name") == "Status"), None)
             self._project_meta = {"project_id": view["id"], "status_field": status}
         return self._project_meta
 
@@ -354,8 +420,8 @@ class GhCliBackend(IssueBackend):
 @dataclass
 class SyncResult:
     artifact_id: str
-    action: str
-    number: int
+    action: str  # "create", "update", or "skip"
+    number: int | None
 
 
 def apply_plan(
@@ -367,19 +433,26 @@ def apply_plan(
 ) -> list[SyncResult]:
     """Execute the plan against ``backend`` and record ids back into each artifact's frontmatter.
 
-    This is where idempotency is realised: a freshly-created issue's number is written to
-    ``github_issue:`` immediately, so a subsequent run sees it and updates instead of recreating.
+    Idempotency: a freshly-created issue's number is written to ``github_issue:`` immediately, so
+    a later run updates rather than recreates. Updates whose issue-shaping content provably hasn't
+    changed since last sync are skipped. On any create/update the current content digest is
+    recorded as ``github_synced_digest:`` so the next run can tell what changed.
     """
     results: list[SyncResult] = []
     for item in plan:
         artifact = item.artifact
-        body = render_issue_body(artifact, body_template)
 
+        if item.skip_unchanged:
+            results.append(SyncResult(artifact_id=artifact.id, action="skip", number=artifact.github_issue))
+            continue
+
+        body = render_issue_body(artifact, body_template)
         if item.action == "create":
             number = backend.create_issue(title=item.title, body=body, label=item.label)
             set_frontmatter_field(artifact.path, "github_issue", number)
         else:
-            number = artifact.github_issue  # guaranteed by build_plan
+            assert artifact.github_issue is not None  # build_plan: update => has an issue number
+            number = artifact.github_issue
             backend.update_issue(number, title=item.title, body=body, label=item.label)
 
         backend.set_issue_state(number, is_open=item.is_open)
@@ -391,6 +464,7 @@ def apply_plan(
                 set_frontmatter_field(artifact.path, "github_project_item", item_id)
             backend.set_project_status(item_id, status=item.project_status)
 
+        set_frontmatter_field(artifact.path, "github_synced_digest", content_digest(artifact))
         results.append(SyncResult(artifact_id=artifact.id, action=item.action, number=number))
     return results
 
@@ -403,9 +477,22 @@ def _print_plan(plan: list[PlanItem], counts: dict[str, int], *, use_project: bo
     print(f"Backlog: {counts['total']} artifacts, {counts['open']} open, "
           f"{counts['open_epics']} open epic(s).")
     creates = sum(1 for p in plan if p.action == "create")
-    updates = len(plan) - creates
-    print(f"Plan: {creates} to create, {updates} to update"
-          + (" (+ project board)" if use_project else "") + ".\n")
+    skips = sum(1 for p in plan if p.skip_unchanged)
+    updates = len(plan) - creates - skips
+    line = f"Plan: {creates} to create, {updates} to update"
+    if skips:
+        line += f", {skips} unchanged (skip)"
+    if use_project:
+        line += " (+ project board)"
+    print(line + ".")
+
+    if counts["stubs"]:
+        print(f"  ! {counts['stubs']} artifact(s) look like unfilled stubs — pushing them makes "
+              f"low-signal issues. Consider filling them (via /product-item) first.")
+    if counts["status_drift"]:
+        print(f"  ! {counts['status_drift']} artifact(s) have a status outside the canonical set "
+              f"{list(PROJECT_STATUSES)} — likely drift worth reconciling before mapping.")
+    print()
     for item in plan:
         print("  " + item.describe())
     print("\n(dry-run — nothing written. Re-run with --apply to sync.)")
@@ -446,9 +533,12 @@ def main(argv: list[str] | None = None) -> int:
 
     created = [r for r in results if r.action == "create"]
     updated = [r for r in results if r.action == "update"]
-    print(f"Synced {len(results)} artifact(s): {len(created)} created, {len(updated)} updated.")
+    skipped = [r for r in results if r.action == "skip"]
+    print(f"Synced {len(results)} artifact(s): {len(created)} created, {len(updated)} updated, "
+          f"{len(skipped)} unchanged (skipped).")
     for r in results:
-        print(f"  {r.artifact_id} -> #{r.number} ({r.action})")
+        num = f"#{r.number}" if r.number else "(none)"
+        print(f"  {r.artifact_id} -> {num} ({r.action})")
     return 0
 
 

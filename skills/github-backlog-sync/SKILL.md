@@ -8,133 +8,146 @@ when_to_use: When a docs/product/ backlog should be visible on GitHub — issues
 
 Mirror the local `docs/product/` backlog — the Epics, User Stories, Tasks, and Implementation
 Plans that `[[product-item]]` scaffolds — out to **GitHub Issues**, and optionally onto a
-**GitHub Project** board. The local Markdown files stay the **source of truth**; each GitHub
-Issue is a mirror that links back to its artifact. This is the persistent, external-visibility
-counterpart to `[[shared-task-tracking]]` (which is session-local coordination).
+**GitHub Project** board. The local Markdown files stay the **source of truth**; each Issue is a
+mirror that links back. Sync is **idempotent**: the issue number is recorded into the artifact's
+frontmatter (`github_issue:`), so re-running updates the existing Issue instead of duplicating it.
 
-Sync is **idempotent**: the Issue number is recorded back into the artifact's frontmatter
-(`github_issue:`), so re-running updates the existing Issue instead of creating a duplicate. This
-mirrors the "record the id, never duplicate" discipline `[[product-item]]` already uses for
-parent/roadmap links.
+## Voice — read this first
+
+You are a capable agent, not a script-runner. Everything below is guidance to apply with
+judgment, not a checklist to recite. In practice that means:
+
+- **Be concise and human.** Scale the response to the ask — a one-line "is this worth it?" gets a
+  short, warm answer, not a wall of headings. Lead with the answer.
+- **Use initiative.** Do the cheap, smart things a thoughtful colleague would: sanity-check the
+  repo exists before planning, notice when artifacts are empty stubs, ask what's really behind the
+  request. The bundled script handles the mechanics so you can spend attention here.
+- **Recommend, don't gatekeep.** Give your honest read (including "I'd stay local"), then let the
+  user decide — and offer to do it their way if they disagree.
 
 ## When to invoke
 
 - The user asks to push/mirror/sync `docs/product/` artifacts to GitHub Issues or a Project.
 - New or changed artifacts need their Issues created or brought up to date.
-- The user asks whether the backlog is big enough to move onto GitHub (see **The size metric**).
+- The user asks whether the backlog is big enough to move onto GitHub (see the metric below).
 
-If there is no `docs/product/` backlog yet, this skill has nothing to sync — point the user at
+If there's no `docs/product/` backlog yet, there's nothing to sync — point them at
 `[[product-item]]` to create artifacts first.
 
-## The size metric — should this project use GitHub at all?
+## Is GitHub even worth it? (the size metric)
 
-A local Markdown backlog is enough for small efforts, and pushing everything to GitHub adds
-overhead (noise, two places to look). **Recommend** graduating to GitHub Issues when **any** of
-these hold — otherwise say so and suggest staying local:
+A local Markdown backlog is plenty for small efforts; pushing everything to GitHub adds noise and
+a second place to look. So when the backlog is small, **say so and recommend staying local** —
+but always **offer to do it anyway** if they want, and if they're just *asking* (not instructing),
+ask what's prompting it, in case there's an unspoken need a board wouldn't solve.
+
+Lead with the numbers (the script prints them), then recommend GitHub when **any** hold:
 
 - more than ~**15–20 open** tracked artifacts, or
 - more than **1 active Epic**, or
-- more than **1 person/agent** working the backlog (needs shared, external visibility), or
-- the work **spans multiple sprints** / more than ~2 weeks, or
+- more than **1 person/agent** on the backlog (shared, external visibility), or
+- work **spanning multiple sprints** / more than ~2 weeks, or
 - **external stakeholders** need read access.
 
-Use a **GitHub Project board** specifically once there is **more than 1 Epic** and a
-cross-cutting status/roadmap view is wanted; below that, plain Issues (or staying local) suffice.
-The sync script prints these counts, so lead with the numbers, then the recommendation — don't
-push GitHub onto a five-task backlog.
+A **Project board** specifically earns its keep once there's **more than 1 Epic** and you want a
+cross-cutting status view.
 
-## Prerequisites
+## Backend & pre-flight
 
-Pick the backend that's available (the script does this for you):
-
-- **`gh` CLI** (preferred) — installed and authenticated (`gh auth status`). Zero-config; the
-  bundled script drives it. Confirm the target repo (`gh repo view` or an explicit `--repo`).
-- **GitHub MCP server** — if `gh` is absent but the GitHub MCP tools are connected, follow the
-  **MCP fallback** section: you perform the same steps the script would, using the MCP tools and
-  the mapping rules below.
-
-If neither is available, stop and tell the user what to set up — do not guess.
+- Prefer the **`gh` CLI** (installed + authenticated). The bundled script drives it.
+- **Confirm the repo resolves before planning** — a quick `gh repo view <owner/name>` catches a
+  typo or an access problem cheaply, before you've promised anything. Default the repo to the
+  current git remote's `origin` when it's unambiguous (that's usually the one they mean). If the
+  check fails, surface it **prominently** — a clear heading, the command you ran, and its output —
+  so it's obvious and actionable, and stop until it's resolved.
+- If `gh` is absent but the **GitHub MCP** tools are connected, follow **MCP fallback** below.
+- If neither is available, say what to set up. Don't guess.
 
 ## Inputs
 
-Gather from the invocation; ask only for what's missing:
-
-- **repo** (required) — `owner/name`. Default to the current repo's origin if unambiguous.
-- **product dir** (optional) — defaults to `docs/product`.
-- **project** (optional) — a GitHub Project number to add issues to and drive its status field.
-- **scope** (optional) — all artifacts, or a subset (a type, an Epic and its children, a single id).
+Ask only for what's missing: **repo** (`owner/name`, default the origin remote), **product dir**
+(default `docs/product`), an optional **project** number, and any **scope** limit (a type, an Epic
+and its children, a single id).
 
 ## Procedure
 
-1. **Resolve the backend and repo.** Prefer `gh`; confirm auth and the target `owner/name`.
-2. **Dry-run first — always.** Run the bundled script in its default (plan-only) mode to produce
-   the sync plan and the backlog counts. The script ships with this skill — run it **in place**
-   from `assets/scripts/sync_github_items.py` (substitute this skill's real install path for
-   `<skill>`); it takes the backlog dir as an argument and finds its template relative to itself,
-   so it needs no bootstrap into the repo:
+1. **Pre-flight** the backend and repo (above).
+2. **Dry-run — always first.** Run the bundled script in plan-only mode. It ships with this skill;
+   run it **in place** from `assets/scripts/sync_github_items.py` (substitute this skill's real
+   install path for `<skill>`). It takes the backlog dir as an argument and finds its template
+   relative to itself, so it needs no bootstrap:
 
    ```bash
-   uv run python <skill>/assets/scripts/sync_github_items.py docs/product --repo <owner/name> [--project <N>]
+   uv run --with pyyaml python <skill>/assets/scripts/sync_github_items.py docs/product --repo <owner/name> [--project <N>]
    ```
 
-   It prints, per artifact: `create` (no `github_issue:` yet) or `update` (has one), the target
-   title/labels/state, and — if `--project` was given — the Project status. It writes **nothing**
-   in this mode.
-3. **Surface the metric + plan, and confirm.** Show the counts and the plan. If the backlog is
-   below the size metric, say so and recommend staying local before doing anything. Get explicit
-   confirmation before writing to GitHub — this reaches an external, shared system.
-4. **Apply.** On confirmation, re-run with `--apply`:
+   It writes nothing and prints: the backlog counts; per artifact whether it's a **create** (no
+   `github_issue:` yet) or **update**; on a re-sync, whether each already-synced artifact has
+   **changed** since last sync (unchanged ones are skipped); and advisory flags for **stubs** and
+   **status drift** (see below).
+3. **Report and confirm — as "what I need before I sync".** Give a tight summary: the size read
+   (recommend, don't gatekeep), what will be created vs. updated, and — because this reaches a
+   shared, external system — an explicit note that already-synced artifacts are **updated, not
+   duplicated**. Then list, as clear actions, anything you need from the user (repo confirmation,
+   project details, how to handle stubs/drift). Offer to walk through them interactively. Get an
+   explicit go-ahead before writing.
+4. **Apply** on confirmation by re-running with `--apply`. The script creates/updates issues, sets
+   open/closed state from status, (with `--project`) puts them on the board with the right status,
+   and records `github_issue:` / `github_project_item:` / `github_synced_digest:` back into
+   frontmatter. Those frontmatter writes are the only local changes — leave committing to the user.
+5. **Report** what was created, updated, and skipped, with issue URLs.
 
-   ```bash
-   uv run python <skill>/assets/scripts/sync_github_items.py docs/product --repo <owner/name> [--project <N>] --apply
-   ```
+## Before you push — three things to catch
 
-   For each artifact the script: creates or updates the Issue; sets its open/closed state from
-   the artifact status; (with `--project`) adds it to the board and sets the status field; and
-   **writes the `github_issue:` / `github_project_item:` values back** into the artifact
-   frontmatter so the next run is idempotent.
-5. **Report.** List what was created vs. updated and the Issue URLs. The frontmatter writeback is
-   a local edit — leave committing to the user.
+The dry-run flags these; handle them with judgment rather than plowing ahead:
+
+- **Stubs.** An artifact still full of `<...>` template placeholders becomes a low-signal Issue.
+  When you see stubs, say so, and rather than pushing noise, **offer to fill them out first** —
+  hand that to `[[product-item]]`, which owns artifact content (a short question-and-answer pass
+  per artifact). Also worth asking: does the real content live somewhere else (a doc, a
+  spreadsheet, someone's notes) that should be brought in first?
+- **Status drift.** The local `status:` is free text and can drift off the canonical set
+  (`Proposed`, `Ready`, `In Progress`, `In Review`, `Done`, `Archived`). The script flags any that
+  don't match; surface near-duplicates and reconcile them **before** mapping onto a Project field,
+  rather than silently creating odd columns.
+- **What changed since last sync.** On a re-sync the script marks each synced artifact
+  changed/unchanged (by digesting its title + status + body) and skips the unchanged ones. Use
+  that to tell the user what actually moved, not just "re-synced everything".
 
 ## Mapping rules
 
-These define how an artifact becomes an Issue; the script and the MCP fallback both follow them.
+- **Title** — `` `<ID>` <title> `` (e.g. `EPIC-004 Payments platform`), greppable by id.
+- **Body** — rendered from `assets/templates/issue-body-template.md`: a backlink, type/status/
+  parent, and the artifact's content. Regenerated on each update; discussion lives in Issue
+  **comments**, which the sync never touches.
+- **Label** — the artifact type (`epic` / `story` / `task` / `plan`).
+- **State** — `Done` / `Archived` close the Issue; every other status leaves it open.
+- **Project status** (with `--project`) — the artifact `status:` maps 1:1 to a Project
+  single-select field of the same name; create missing options once.
 
-- **Title** — `` `<ID>` <title> `` (e.g. `EPIC-004 Payments platform`) so the Issue is greppable
-  by artifact id.
-- **Body** — rendered from `assets/templates/issue-body-template.md`: a backlink to the artifact
-  path, the type/status/parent, and the artifact's own content. The whole body is **regenerated**
-  on each update; human discussion belongs in Issue **comments**, which the sync never touches.
-- **Label** — the artifact type: `epic` / `story` / `task` / `plan`.
-- **State** — `Done` and `Archived` close the Issue; every other status leaves it open.
-- **Project status** (only with `--project`) — the artifact `status:` maps 1:1 to a Project
-  single-select field of the same name (`Proposed`, `Ready`, `In Progress`, `In Review`, `Done`,
-  `Archived`). Create those options on the board once if they don't exist.
+## Safety
 
-## Idempotency & safety
-
-- The **only** local write is recording `github_issue:` / `github_project_item:` into frontmatter.
-  The script never edits an artifact's other fields, its parent, or the roadmap.
-- Re-running with no local changes is a **no-op** (everything already has its issue number).
-- Default is plan-only; mutations require `--apply`. Never `--apply` without the user's OK.
-- One-way sync (local → GitHub) only. Changes made **on** GitHub are not pulled back; if a status
-  differs, the local artifact wins on the next sync.
+- The only local writes are the bookkeeping frontmatter fields above — never an artifact's other
+  content, its parent, or the roadmap.
+- Plan-only by default; mutations need `--apply` and the user's OK.
+- One-way sync (local → GitHub). Changes made **on** GitHub aren't pulled back; the local artifact
+  wins on the next sync.
 
 ## MCP fallback (no `gh`)
 
 When only the GitHub MCP server is available, do what the script would, in the same order, using
 the MCP Issue/Project tools: read the artifacts, compute create-vs-update from `github_issue:`,
-apply the **Mapping rules** above, then edit each artifact's frontmatter to record the returned
-issue number (and project item id). Keep the same confirm-first, plan-then-apply discipline.
+apply the mapping rules, then record the returned issue number (and project item id) back into
+frontmatter. Keep the same pre-flight, plan-then-confirm, stub/drift awareness.
 
 ## Acceptance checklist
 
+- The repo was confirmed to resolve before any plan was promised.
 - A dry-run was shown and confirmed **before** any GitHub write.
-- The size metric was reported; GitHub was recommended only when the thresholds were met.
-- No duplicate issues: artifacts with a `github_issue:` were updated, not recreated.
-- Every synced artifact carries its `github_issue:` (and `github_project_item:` when a Project
-  was used) in frontmatter afterward.
-- Issue state matches artifact status (`Done`/`Archived` → closed).
-- Only frontmatter was written locally; nothing was committed by the skill.
+- The size read was given as a recommendation (with an offer to proceed anyway), not a gate.
+- Stubs and status drift were surfaced, not silently pushed.
+- No duplicate issues: artifacts with a `github_issue:` were updated (or skipped if unchanged).
+- Every synced artifact carries its `github_issue:` (and `github_project_item:` with a Project)
+  afterward; issue state matches status; only frontmatter was written locally.
 
 Related: consumes artifacts from `[[product-item]]`; complements `[[shared-task-tracking]]`.

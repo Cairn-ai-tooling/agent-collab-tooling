@@ -93,7 +93,7 @@ def test_set_frontmatter_field_inserts_then_replaces(tmp_path, templates_dir):
 
 # --- apply + idempotency ------------------------------------------------------------------------
 
-def test_apply_creates_then_reruns_as_update(tmp_path, templates_dir):
+def test_apply_creates_then_reruns_skips_unchanged(tmp_path, templates_dir):
     _seed_epic(tmp_path, templates_dir)
     backend = FakeBackend()
 
@@ -102,12 +102,56 @@ def test_apply_creates_then_reruns_as_update(tmp_path, templates_dir):
     assert [r.action for r in first] == ["create"]
     assert len(backend.created) == 1
 
-    # Re-load (frontmatter now has the number) and sync again: update, no new issue.
+    # Re-load (frontmatter now has the number + a synced digest) and sync again. Nothing changed,
+    # so it's a no-op skip — no duplicate issue, and no redundant update either.
     second = sync.apply_plan(sync.build_plan(sync.load_artifacts(tmp_path)), backend,
                              body_template=TEMPLATE, use_project=False)
-    assert [r.action for r in second] == ["update"]
+    assert [r.action for r in second] == ["skip"]
     assert len(backend.created) == 1          # still just the one
-    assert backend.updated and backend.updated[0][0] == first[0].number
+    assert backend.updated == []              # unchanged content is not re-pushed
+
+
+def test_synced_artifact_without_digest_is_an_update(tmp_path, templates_dir):
+    # An artifact synced before digests existed (has github_issue but no github_synced_digest,
+    # like a repo synced 'last week') can't be proven unchanged, so it updates rather than skips.
+    art = _seed_epic(tmp_path, templates_dir)[0]
+    sync.set_frontmatter_field(art.path, "github_issue", 31)
+    plan = sync.build_plan(sync.load_artifacts(tmp_path))
+    assert plan[0].action == "update"
+    assert plan[0].changed is None
+    assert plan[0].skip_unchanged is False
+
+
+def test_edited_artifact_re_syncs_as_update(tmp_path, templates_dir):
+    _seed_epic(tmp_path, templates_dir)
+    backend = FakeBackend()
+    sync.apply_plan(sync.build_plan(sync.load_artifacts(tmp_path)), backend,
+                    body_template=TEMPLATE, use_project=False)
+    # Edit the artifact body — its issue-shaping content now differs from the synced digest.
+    art = sync.load_artifacts(tmp_path)[0]
+    art.path.write_text(art.path.read_text(encoding="utf-8") + "\n\nNewly written detail.\n",
+                        encoding="utf-8")
+    result = sync.apply_plan(sync.build_plan(sync.load_artifacts(tmp_path)), backend,
+                             body_template=TEMPLATE, use_project=False)
+    assert [r.action for r in result] == ["update"]
+    assert backend.updated  # the edited artifact was pushed
+
+
+def test_stub_and_status_drift_flags(tmp_path, templates_dir):
+    # A freshly scaffolded artifact still has <...> placeholder body -> stub.
+    art = _seed_epic(tmp_path, templates_dir)[0]
+    assert art.is_stub is True
+    filled = sync.Artifact(path=art.path, type_key="epic", meta=art.meta,
+                           body="Real, filled-in content with no placeholders.")
+    assert filled.is_stub is False
+
+    # A status off the canonical set is flagged as drift.
+    sync.set_frontmatter_field(art.path, "status", "Backlogged")
+    reloaded = sync.load_artifacts(tmp_path)[0]
+    assert reloaded.status_is_canonical is False
+    assert sync.build_plan([reloaded])[0].status_ok is False
+    counts = sync.backlog_counts([reloaded])
+    assert counts["stubs"] == 1 and counts["status_drift"] == 1
 
 
 def test_apply_sets_state_from_status(tmp_path, templates_dir):
@@ -141,7 +185,8 @@ def test_backlog_counts(tmp_path, templates_dir):
                status="Done")
     npi.create("task", "T1", product_dir=tmp_path, templates_dir=templates_dir, today="2026-07-29")
     counts = sync.backlog_counts(sync.load_artifacts(tmp_path))
-    assert counts == {"total": 3, "open": 2, "open_epics": 1}
+    # All three are freshly scaffolded stubs; statuses are canonical.
+    assert counts == {"total": 3, "open": 2, "open_epics": 1, "stubs": 3, "status_drift": 0}
 
 
 # --- rendering ----------------------------------------------------------------------------------
