@@ -1,6 +1,6 @@
 {
   "name": "agent-collab-tooling",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Reusable skills that help AI agents collaborate: structured handoffs, shared task tracking, and code-review exchange.",
   "author": {
     "name": "Steven Merriel",
