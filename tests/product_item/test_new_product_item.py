@@ -50,6 +50,18 @@ def test_next_id_empty_dir_starts_at_001(tmp_path):
     assert npi.next_id(tmp_path, "task") == "001"
 
 
+def test_next_id_counts_archived_ids(tmp_path):
+    # An archived EPIC-002 must still count, so the next id is 003 — never a
+    # reused 002. Proves next_id recurses into <type>/archive/.
+    epics = tmp_path / "epics"
+    (epics).mkdir()
+    (epics / "EPIC-001-active.md").write_text("x", encoding="utf-8")
+    archive = epics / "archive"
+    archive.mkdir()
+    (archive / "EPIC-002-shipped.md").write_text("x", encoding="utf-8")
+    assert npi.next_id(tmp_path, "epic") == "003"
+
+
 # --- create(): the restored mkdir + new flags ----------------------------------
 
 def test_create_makes_missing_type_dir(tmp_path, templates_dir):

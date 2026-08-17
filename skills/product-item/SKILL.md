@@ -106,10 +106,25 @@ to:
 
 When helping complete a Task or Plan, hold it to these four before ticking it done.
 
+## Closing out shipped work
+
+When an Epic is genuinely finished it graduates *out* of the active backlog: set `status: Done`
+on the epic and its whole subtree, `git mv` that subtree into the per-type `archive/` dirs
+(`docs/product/<type>/archive/`), regenerate the shipped index, and drop its `docs/roadmap.md`
+row (the roadmap tracks outstanding work only; the CHANGELOG keeps the narrative). The bundled
+`scripts/generate_shipped_index.py` derives `docs/product/shipped.md` from every `Done` epic —
+it recurses `epics/archive/`, so **never hand-edit** that file, just re-run it. Archive one epic
+by hand; to sweep **all** completed epics in one pass, use `[[close-out-sweep]]`.
+
+Archiving is safe for numbering and links: both `scripts/new_product_item.py` and
+`scripts/validate_product_items.py` recurse into `archive/`, so archived ids still count (never
+reused) and cross-links resolve across the active/archive boundary.
+
 ## Acceptance checklist
 
 - Numbering is **max + 1** per type and **gap-safe** — a missing middle number is never reused;
-  an empty type-dir starts at `001`.
+  an empty type-dir starts at `001`. The scan is **archive-aware** (recurses `<type>/archive/`),
+  so an archived id is still counted and never reused.
 - Re-running never overwrites an existing artifact (the scaffolder refuses).
 - Parent/roadmap links are added **only to pre-existing files** and are **never duplicated**.
 - The created artifact's frontmatter is accurate (id, title, created, status, parent) — a title
@@ -117,4 +132,5 @@ When helping complete a Task or Plan, hold it to these four before ticking it do
 - The created Task/Plan carries the closure check.
 - `scripts/validate_product_items.py` reports no violations after the artifact is created.
 
-Related: pairs with `[[decision-record]]` (ADRs) and `[[changelog]]` (release notes).
+Related: pairs with `[[decision-record]]` (ADRs) and `[[changelog]]` (release notes);
+`[[close-out-sweep]]` retires the Epics this skill creates once they ship.

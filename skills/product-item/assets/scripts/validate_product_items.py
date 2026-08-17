@@ -126,11 +126,13 @@ def validate_tree(product_dir: Path) -> list[Violation]:
     records: list[tuple[str, Path, dict[str, Any]]] = []
 
     # Pass 1 — parse + per-file structural checks + build the id index.
+    # Discovery recurses (rglob) so archived artifacts under ``<type>/archive/`` are validated
+    # too, and the single id index lets links resolve across the active/archive boundary.
     for type_key, spec in _TYPES.items():
         directory = product_dir / spec.directory
         if not directory.is_dir():
             continue
-        for path in sorted(directory.glob("*.md")):
+        for path in sorted(directory.rglob("*.md")):
             meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
             if not meta:
                 violations.append(Violation(path, "missing or malformed YAML frontmatter"))
