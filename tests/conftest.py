@@ -1,9 +1,9 @@
 """Shared pytest fixtures/paths for the bundled-script tests.
 
-The product-item scripts ship as skill *assets* (copied into consuming repos),
-not as an installed package, so they aren't on the default import path. Put
-their directory on ``sys.path`` here so tests can ``import new_product_item`` /
-``import validate_product_items`` by module name.
+Skills' Python scripts ship as *assets* (copied into consuming repos), not as an
+installed package, so they aren't on the default import path. Put every skill's
+``scripts/`` dir on ``sys.path`` here so tests can import them by module name
+(e.g. ``import new_product_item`` / ``import sync_github_items``).
 """
 
 from __future__ import annotations
@@ -14,11 +14,11 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-_PRODUCT_ITEM = REPO_ROOT / "skills" / "product-item" / "assets"
-SCRIPTS_DIR = _PRODUCT_ITEM / "scripts"
-TEMPLATES_DIR = _PRODUCT_ITEM / "templates"
+SKILLS_DIR = REPO_ROOT / "skills"
+TEMPLATES_DIR = SKILLS_DIR / "product-item" / "assets" / "templates"
 
-sys.path.insert(0, str(SCRIPTS_DIR))
+for _scripts in sorted(SKILLS_DIR.glob("*/assets/scripts")):
+    sys.path.insert(0, str(_scripts))
 
 
 @pytest.fixture

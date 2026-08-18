@@ -1,6 +1,6 @@
 # 0003 — GitHub sync as a separate sibling skill with a backend-agnostic adapter
 
-**Status:** Proposed
+**Status:** Accepted (implemented as the `github-backlog-sync` skill)
 
 ## Context
 
