@@ -1,6 +1,9 @@
 # Design — `github-backlog-sync` (GitHub Issues / Projects sync for `product-item`)
 
-**Status:** Proposed (design only — no implementation this round)
+**Status:** Implemented as [`github-backlog-sync`](../../skills/github-backlog-sync/SKILL.md).
+One refinement landed during build: because MCP tools are invoked by the agent (not a subprocess),
+the deterministic script *is* the `gh`-CLI adapter, and the GitHub MCP backend is the agent-level
+fallback the skill documents — the `IssueBackend` seam still keeps the sync engine testable.
 **Related:** [`product-item`](../../skills/product-item/SKILL.md),
 [`shared-task-tracking`](../../skills/shared-task-tracking/SKILL.md), ADR
 [`0003`](../decisions/0003-github-backlog-sync-skill.md)

@@ -3,7 +3,7 @@
 Skills' Python scripts ship as *assets* (copied into consuming repos), not as an
 installed package, so they aren't on the default import path. Put every skill's
 ``scripts/`` dir on ``sys.path`` here so tests can import them by module name
-(e.g. ``import new_product_item`` / ``import close_out_sweep``), and so a script
+(e.g. ``import new_product_item`` / ``import close_out_sweep``, ``import sync_github_items``), and so a script
 that reuses a sibling (the sweep imports product-item's generator) resolves too.
 """
 
