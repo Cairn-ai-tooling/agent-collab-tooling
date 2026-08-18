@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `close-out-sweep` skill — batch-retires completed Epics from a `docs/product/` backlog:
+  `git mv`s each `Done` Epic's whole subtree (stories/tasks/plan, resolved via frontmatter links)
+  into per-type `archive/` dirs, regenerates the shipped index, and prunes the Epic's roadmap row.
+  Plan-only by default with a confirm-first `--apply`; idempotent (nothing `Done` = no-op). The
+  batch counterpart to `product-item`.
+- `product-item` gains `generate_shipped_index.py` — derives `docs/product/shipped.md` from `Done`
+  epics (recursing `epics/archive/`), sorted, with an empty-state placeholder. Never hand-edited.
+
+### Changed
+
+- `product-item` scanners are now **archive-aware**: `next_id` (`new_product_item.py`) and
+  `validate_tree` (`validate_product_items.py`) recurse into `<type>/archive/`, so archived ids
+  still count (never reused) and cross-links resolve across the active/archive boundary. The
+  skill gains a "closing out shipped work" note cross-linking `close-out-sweep`.
+
 ## [0.3.0] - 2026-08-17
 
 ### Added

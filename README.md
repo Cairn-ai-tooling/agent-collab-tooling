@@ -34,6 +34,7 @@ guidance the agent follows. Claude Code auto-discovers them when the plugin is i
 | [`decision-record`](skills/decision-record/SKILL.md) | Recording an architecture/design decision — scaffolds the next-numbered ADR in `docs/decisions/` from a template, with gap-safe numbering. |
 | [`changelog`](skills/changelog/SKILL.md) | Recording a notable change — adds a correctly-placed entry under `[Unreleased]` in `CHANGELOG.md`, reusing the right `### <Type>` section without duplicating headings. |
 | [`product-item`](skills/product-item/SKILL.md) | Creating a backlog artifact — scaffolds the next-numbered Epic, User Story, Task, or Implementation Plan from `docs/product/templates/`, wires parent/child links, and adds a roadmap pointer. Self-contained (`pyyaml` only) and bootstraps the workflow into any repo. |
+| [`close-out-sweep`](skills/close-out-sweep/SKILL.md) | Retiring shipped work — archives every `Done` Epic and its whole subtree into per-type `archive/` dirs in one pass, regenerates the generated `shipped.md`, and prunes the roadmap. The batch counterpart to `product-item`; idempotent and confirm-first. |
 | [`github-backlog-sync`](skills/github-backlog-sync/SKILL.md) | Mirroring a `docs/product/` backlog to GitHub — creates/updates Issues (and an optional Project board) from the artifacts `product-item` scaffolds, idempotently via a `github_issue:` backlink, and advises whether the backlog is even big enough to warrant GitHub. |
 
 ## Installing in another project

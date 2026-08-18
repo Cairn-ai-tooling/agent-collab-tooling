@@ -106,14 +106,16 @@ def next_id(product_dir: Path, item_type: str) -> str:
     """Return the next zero-padded id for ``item_type`` as ``max + 1``.
 
     Gap-safe: with ``001`` and ``003`` present, returns ``004`` — never ``002``.
-    An empty (or missing) directory yields ``001``.
+    An empty (or missing) directory yields ``001``. **Archive-aware**: the scan
+    recurses, so an id under ``<type>/archive/`` still counts and is never reused
+    (archiving a shipped ``EPIC-006`` must not let the next epic become ``006``).
     """
     spec = _spec(item_type)
     directory = product_dir / spec.directory
     pattern = re.compile(rf"^{spec.prefix}-(\d+)")
     highest = 0
     if directory.is_dir():
-        for entry in directory.iterdir():
+        for entry in directory.rglob(f"{spec.prefix}-*"):
             match = pattern.match(entry.name)
             if match:
                 highest = max(highest, int(match.group(1)))

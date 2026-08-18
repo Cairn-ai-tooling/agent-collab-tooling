@@ -27,6 +27,23 @@ def test_freshly_scaffolded_artifact_is_tolerated(tmp_path, templates_dir):
     assert vpi.validate_tree(tmp_path) == []
 
 
+def test_archived_artifacts_are_validated_and_links_resolve(tmp_path, templates_dir):
+    # A Done epic archived under epics/archive/, and an active story that links to
+    # it. The gate must recurse into archive/ and resolve the link across the
+    # active/archive boundary — no violations.
+    epic = npi.create("epic", "Search overhaul", product_dir=tmp_path,
+                      templates_dir=templates_dir, today="2026-07-29")
+    epic.write_text(epic.read_text(encoding="utf-8").replace("status: Proposed", "status: Done"),
+                    encoding="utf-8")
+    archive = tmp_path / "epics" / "archive"
+    archive.mkdir(parents=True)
+    epic.rename(archive / epic.name)
+
+    npi.create("story", "Faceted filters", product_dir=tmp_path, templates_dir=templates_dir,
+               today="2026-07-29", parent="EPIC-001")
+    assert vpi.validate_tree(tmp_path) == []
+
+
 def test_duplicate_id_detected(tmp_path, templates_dir):
     first = npi.create("epic", "Alpha", product_dir=tmp_path, templates_dir=templates_dir, today="2026-07-29")
     (tmp_path / "epics" / "EPIC-001-copy.md").write_text(first.read_text(encoding="utf-8"), encoding="utf-8")
